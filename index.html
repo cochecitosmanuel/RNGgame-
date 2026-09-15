@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omni RNG 2D - ¡Infinitos Objetos!</title>
+  <style>
+    :root {
+      --bg-color: #090d16;
+      --card-color: #131c2e;
+      --accent-color: #38bdf8;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 { margin-bottom: 5px; text-align: center; }
+    .stats-bar { display: flex; gap: 20px; color: #94a3b8; margin-bottom: 15px; }
+
+    /* Carta Principal */
+    .card-container { perspective: 1000px; margin-bottom: 20px; }
+
+    .card {
+      width: 240px;
+      height: 330px;
+      background-color: var(--card-color);
+      border-radius: 16px;
+      border: 4px solid #334155;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s, border-color 0.3s, box-shadow 0.3s;
+      text-align: center;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+
+    .card.shake { animation: pop 0.25s ease-in-out; }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    .card-icon { font-size: 65px; margin-bottom: 10px; }
+    .card-category { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+    .card-title { font-size: 20px; font-weight: bold; margin: 5px 0; }
+    .card-rarity { font-size: 13px; font-weight: bold; }
+
+    /* Botones */
+    .actions { display: flex; gap: 10px; margin-bottom: 25px; }
+
+    button {
+      background-color: var(--accent-color);
+      color: #0f172a;
+      border: none;
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover { background-color: #7dd3fc; transform: scale(1.05); }
+    button:active { transform: scale(0.98); }
+
+    /* Álbum de Objetos */
+    .album-title { margin-top: 20px; border-bottom: 2px solid #334155; width: 100%; max-width: 600px; text-align: center; padding-bottom: 10px; }
+    .album {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .album-item {
+      background-color: #131c2e;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      font-size: 10px;
+      border: 2px solid #334155;
+      opacity: 0.25;
+      transition: opacity 0.3s;
+    }
+
+    .album-item.unlocked { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <h1>🌍 Omni RNG 2D</h1>
+  <div class="stats-bar">
+    <div>Tiradas: <span id="total-rolls">0</span></div>
+  </div>
+
+  <!-- Carta Principal -->
+  <div class="card-container">
+    <div class="card" id="main-card">
+      <div class="card-category" id="card-category">RNG General</div>
+      <div class="card-icon" id="card-icon">❓</div>
+      <div class="card-title" id="card-title">Pulsa Tirar</div>
+      <div class="card-rarity" id="card-rarity">1 en 1</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button onclick="roll()">🎲 ¡TIRAR OBJETO!</button>
+  </div>
+
+  <!-- Álbum / Inventario -->
+  <h2 class="album-title">Enciclopedia de Objetos (<span id="unlocked-count">0</span>/<span id="total-count">0</span>)</h2>
+  <div class="album" id="album"></div>
+
+  <script>
+    // BASE DE DATOS DE OBJETOS INFINITOS
+    const ITEMS = [
+      // Material de Clase
+      { name: "Lápiz Usado", category: "Escuela", chance: 2, icon: "✏️", color: "#a1a1aa" },
+      { name: "Goma de Borrar", category: "Escuela", chance: 4, icon: "🧹", color: "#a1a1aa" },
+      { name: "Regla Rota", category: "Escuela", chance: 8, icon: "📏", color: "#a1a1aa" },
+      { name: "Cuaderno", category: "Escuela", chance: 15, icon: "📓", color: "#60a5fa" },
+      { name: "Mochila", category: "Escuela", chance: 45, icon: "🎒", color: "#60a5fa" },
+      { name: "Calculadora Científica", category: "Escuela", chance: 120, icon: "📟", color: "#fde047" },
+
+      // Cocina
+      { name: "Cuchara", category: "Cocina", chance: 3, icon: "🥄", color: "#a1a1aa" },
+      { name: "Taza Agrietada", category: "Cocina", chance: 6, icon: "☕", color: "#a1a1aa" },
+      { name: "Sartén", category: "Cocina", chance: 25, icon: "🍳", color: "#60a5fa" },
+      { name: "Cuchillo de Chef", category: "Cocina", chance: 80, icon: "🔪", color: "#fde047" },
+      { name: "Microondas", category: "Cocina", chance: 250, icon: "📻", color: "#c084fc" },
+      { name: "Nevera Inteligente", category: "Cocina", chance: 1200, icon: "🧊", color: "#f87171" },
+
+      // Muebles
+      { name: "Silla de Plástico", category: "Muebles", chance: 5, icon: "🪑", color: "#a1a1aa" },
+      { name: "Mesa de Madera", category: "Muebles", chance: 30, icon: "🪵", color: "#60a5fa" },
+      { name: "Lámpara de Pie", category: "Muebles", chance: 60, icon: "💡", color: "#60a5fa" },
+      { name: "Sofá Cómodo", category: "Muebles", chance: 180, icon: "🛋️", color: "#fde047" },
+      { name: "Cama King Size", category: "Muebles", chance: 500, icon: "🛏️", color: "#c084fc" },
+
+      // Naturaleza y Árboles
+      { name: "Hoja Seca", category: "Naturaleza", chance: 2, icon: "🍂", color: "#a1a1aa" },
+      { name: "Cactus Enano", category: "Naturaleza", chance: 10, icon: "🌵", color: "#a1a1aa" },
+      { name: "Pino Verde", category: "Naturaleza", chance: 100, icon: "🌲", color: "#60a5fa" },
+      { name: "Bonsái Milenario", category: "Naturaleza", chance: 2500, icon: "🪴", color: "#f87171" },
+      { name: "Árbol del Cerezo (Sakura)", category: "Naturaleza", chance: 15000, icon: "🌸", color: "#f472b6" },
+
+      // Vehículos / Coches
+      { name: "Bicicleta Vieja", category: "Coches", chance: 40, icon: "🚲", color: "#60a5fa" },
+      { name: "Patinete Eléctrico", category: "Coches", chance: 90, icon: "🛴", color: "#60a5fa" },
+      { name: "Coche Utilitario", category: "Coches", chance: 350, icon: "🚗", color: "#fde047" },
+      { name: "Camión de Bomberos", category: "Coches", chance: 1500, icon: "🚒", color: "#c084fc" },
+      { name: "Deportivo de Lujo", category: "Coches", chance: 8000, icon: "🏎️", color: "#f87171" },
+      { name: "Cohete Espacial", category: "Coches", chance: 100000, icon: "🚀", color: "#38bdf8" },
+
+      // Míticos / Imposibles (1 en 1 Millón)
+      { name: "El Santo Grial", category: "Mítico", chance: 250000, icon: "🏆", color: "#fbbf24" },
+      { name: "Agujero Negro", category: "Mítico", chance: 1000000, icon: "🕳️", color: "#e879f9" }
+    ];
+
+    let totalRolls = parseInt(localStorage.getItem("omni_rolls")) || 0;
+    let unlocked = new Set(JSON.parse(localStorage.getItem("omni_unlocked")) || []);
+
+    document.getElementById("total-rolls").innerText = totalRolls;
+    document.getElementById("total-count").innerText = ITEMS.length;
+
+    // Crear la cuadrícula de la Enciclopedia
+    const albumEl = document.getElementById("album");
+    ITEMS.forEach((item, index) => {
+      const el = document.createElement("div");
+      el.className = `album-item ${unlocked.has(index) ? 'unlocked' : ''}`;
+      el.id = `album-${index}`;
+      if (unlocked.has(index)) el.style.borderColor = item.color;
+      el.innerHTML = `<div>${item.icon}</div><div><b>${item.name}</b></div><div>1/${item.chance.toLocaleString()}</div>`;
+      albumEl.appendChild(el);
+    });
+    document.getElementById("unlocked-count").innerText = unlocked.size;
+
+    // Tirar RNG
+    function roll() {
+      totalRolls++;
+      document.getElementById("total-rolls").innerText = totalRolls;
+
+      const rand = Math.random();
+      // Ordenar de más raro a más común
+      const sorted = [...ITEMS].sort((a, b) => b.chance - a.chance);
+
+      let selected = ITEMS[0];
+      for (let item of sorted) {
+        if (rand < (1 / item.chance)) {
+          selected = item;
+          break;
+        }
+      }
+
+      // Actualizar Interfaz
+      const cardEl = document.getElementById("main-card");
+      cardEl.classList.remove("shake");
+      void cardEl.offsetWidth;
+      cardEl.classList.add("shake");
+
+      document.getElementById("card-category").innerText = selected.category;
+      document.getElementById("card-icon").innerText = selected.icon;
+      document.getElementById("card-title").innerText = selected.name;
+      document.getElementById("card-rarity").innerText = `1 en ${selected.chance.toLocaleString()}`;
+      document.getElementById("card-rarity").style.color = selected.color;
+      
+      cardEl.style.borderColor = selected.color;
+      cardEl.style.boxShadow = `0 0 25px ${selected.color}aa`;
+
+      // Registrar desbloqueo
+      const index = ITEMS.findIndex(i => i.name === selected.name);
+      if (!unlocked.has(index)) {
+        unlocked.add(index);
+        const albumItem = document.getElementById(`album-${index}`);
+        albumItem.classList.add("unlocked");
+        albumItem.style.borderColor = selected.color;
+        document.getElementById("unlocked-count").innerText = unlocked.size;
+      }
+
+      localStorage.setItem("omni_rolls", totalRolls);
+      localStorage.setItem("omni_unlocked", JSON.stringify(Array.from(unlocked)));
+    }
+  </script>
+</body>
+</html>
