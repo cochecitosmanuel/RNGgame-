@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Omni RNG 2D con Imágenes</title>
+  <title>Omni RNG 2D - Auto Roll Evolutivo</title>
   <style>
     :root {
       --bg-color: #090d16;
       --card-color: #131c2e;
       --accent-color: #38bdf8;
+      --gold-color: #fbbf24;
     }
 
     body {
@@ -24,14 +25,29 @@
     }
 
     h1 { margin-bottom: 5px; text-align: center; }
-    .stats-bar { display: flex; gap: 20px; color: #94a3b8; margin-bottom: 15px; }
+
+    /* Barra de Estadísticas */
+    .stats-bar {
+      display: flex;
+      gap: 15px;
+      font-size: 15px;
+      margin-bottom: 15px;
+      background: #1e293b;
+      padding: 10px 20px;
+      border-radius: 20px;
+      border: 1px solid #334155;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .coins-display { color: var(--gold-color); font-weight: bold; }
 
     /* Carta Principal */
-    .card-container { perspective: 1000px; margin-bottom: 20px; }
+    .card-container { perspective: 1000px; margin-bottom: 15px; }
 
     .card {
       width: 250px;
-      height: 350px;
+      height: 340px;
       background-color: var(--card-color);
       border-radius: 16px;
       border: 4px solid #334155;
@@ -46,17 +62,17 @@
       box-sizing: border-box;
     }
 
-    .card.shake { animation: pop 0.25s ease-in-out; }
+    .card.shake { animation: pop 0.15s ease-in-out; }
 
     @keyframes pop {
       0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
+      50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
 
     .card-image-box {
       width: 100%;
-      height: 160px;
+      height: 140px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -65,47 +81,63 @@
       overflow: hidden;
     }
 
-    .card-image-box img {
-      max-width: 90%;
-      max-height: 90%;
-      object-fit: contain;
-    }
-
+    .card-image-box img { max-width: 90%; max-height: 90%; object-fit: contain; }
     .card-category { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
-    .card-title { font-size: 18px; font-weight: bold; margin: 5px 0; }
-    .card-rarity { font-size: 13px; font-weight: bold; }
+    .card-title { font-size: 18px; font-weight: bold; margin: 2px 0; }
+    .card-rarity { font-size: 12px; font-weight: bold; }
+    .card-value { font-size: 13px; color: var(--gold-color); font-weight: bold; }
 
-    /* Botón */
+    /* Controles */
+    .actions { display: flex; gap: 10px; margin-bottom: 20px; }
+
     button {
       background-color: var(--accent-color);
       color: #0f172a;
       border: none;
-      padding: 14px 28px;
-      font-size: 18px;
+      padding: 12px 20px;
+      font-size: 15px;
       font-weight: bold;
       border-radius: 8px;
       cursor: pointer;
-      margin-bottom: 25px;
       transition: background 0.2s, transform 0.1s;
     }
 
-    button:hover { background-color: #7dd3fc; transform: scale(1.05); }
+    button:hover { background-color: #7dd3fc; transform: scale(1.03); }
 
-    /* Enciclopedia */
-    .album-title { margin-top: 10px; border-bottom: 2px solid #334155; width: 100%; max-width: 600px; text-align: center; padding-bottom: 10px; }
+    .btn-auto.active { background-color: #ef4444; color: white; }
+
+    /* Secciones (Tienda y Colección) */
+    .section-box {
+      width: 100%;
+      max-width: 650px;
+      background: #131c2e;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #334155;
+      box-sizing: border-box;
+    }
+
+    .section-title { margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 8px; font-size: 18px; text-align: center; }
+
+    /* Tienda Grid */
+    .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
+    .shop-item { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center; font-size: 12px; }
+    .shop-item h4 { margin: 5px 0; }
+    .shop-item button { width: 100%; margin-top: 8px; padding: 8px; font-size: 12px; background: var(--gold-color); }
+
+    /* Colección Grid */
     .album {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
       gap: 10px;
-      width: 100%;
-      max-width: 600px;
-      margin-top: 15px;
-      max-height: 350px;
+      max-height: 250px;
       overflow-y: auto;
     }
 
     .album-item {
-      background-color: #131c2e;
+      position: relative;
+      background-color: #1e293b;
       border-radius: 8px;
       padding: 8px;
       text-align: center;
@@ -119,16 +151,25 @@
 
     .album-item img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 4px; }
     .album-item.unlocked { opacity: 1; }
+    .count-badge {
+      position: absolute; top: 4px; right: 4px; background-color: var(--accent-color);
+      color: #0f172a; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 8px; display: none;
+    }
+    .album-item.unlocked .count-badge { display: block; }
   </style>
 </head>
 <body>
 
-  <h1>🌍 Omni RNG 2D</h1>
+  <h1>🌍 Omni RNG - Velocidad Extrema</h1>
+  
   <div class="stats-bar">
-    <div>Tiradas: <span id="total-rolls">0</span></div>
+    <div>🪙 Monedas: <span class="coins-display" id="coins">0</span></div>
+    <div>✨ Suerte: <span id="luck-display">1x</span></div>
+    <div>⚡ Cadencia: <span id="speed-display">1s</span></div>
+    <div>🎲 Tiradas: <span id="total-rolls">0</span></div>
   </div>
 
-  <!-- Carta con Imagen Real -->
+  <!-- Carta Principal -->
   <div class="card-container">
     <div class="card" id="main-card">
       <div class="card-category" id="card-category">RNG General</div>
@@ -137,79 +178,224 @@
       </div>
       <div class="card-title" id="card-title">Pulsa Tirar</div>
       <div class="card-rarity" id="card-rarity">1 en 1</div>
+      <div class="card-value" id="card-value">+0 🪙</div>
     </div>
   </div>
 
-  <button onclick="roll()">🎲 ¡TIRAR OBJETO!</button>
+  <div class="actions">
+    <button onclick="roll()">🎲 ¡TIRAR OBJETO!</button>
+    <button id="btn-auto" class="btn-auto" onclick="toggleAutoRoll()">🔄 Tirar Auto: OFF</button>
+  </div>
 
-  <h2 class="album-title">Colección (<span id="unlocked-count">0</span>/<span id="total-count">0</span>)</h2>
-  <div class="album" id="album"></div>
+  <!-- TIENDA DE MEJORAS -->
+  <div class="section-box">
+    <h3 class="section-title">🛒 Tienda de Mejoras</h3>
+    <div class="shop-grid">
+      <!-- Mejoras de Suerte -->
+      <div class="shop-item">
+        <h4>🧪 Poción Verde</h4>
+        <p>+0.5x de Suerte</p>
+        <button onclick="buyUpgrade('luck', 0.5, 50)">Comprar: 50 🪙</button>
+      </div>
+      <div class="shop-item">
+        <h4>⚡ Poción Dorada</h4>
+        <p>+2.0x de Suerte</p>
+        <button onclick="buyUpgrade('luck', 2.0, 300)">Comprar: 300 🪙</button>
+      </div>
+
+      <!-- Mejoras de Velocidad del Auto Roll -->
+      <div class="shop-item">
+        <h4>⚙️ Motor Básico</h4>
+        <p>Tira cada 0.5 seg</p>
+        <button onclick="buySpeedUpgrade(500, 150)">Comprar: 150 🪙</button>
+      </div>
+      <div class="shop-item">
+        <h4>🚀 Turbo Impulsor</h4>
+        <p>Tira cada 0.2 seg</p>
+        <button onclick="buySpeedUpgrade(200, 1000)">Comprar: 1,000 🪙</button>
+      </div>
+      <div class="shop-item">
+        <h4>⚛️ Reactor Cuántico</h4>
+        <p>Tira cada 0.05 seg (¡Ultra!)</p>
+        <button onclick="buySpeedUpgrade(50, 10000)">Comprar: 10,000 🪙</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLECCIÓN -->
+  <div class="section-box">
+    <h3 class="section-title">📚 Colección (<span id="unlocked-count">0</span>/<span id="total-count">0</span>)</h3>
+    <div class="album" id="album"></div>
+  </div>
 
   <script>
     const ITEMS = [
-      { name: "Lápiz", category: "Escuela", chance: 2, img: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQuZpBwkJcGo0RL8_4JuaA8O9fwGVNkaibDq02boNGNyKRmiU6_GLO2poMm1DUp7uHkOmFS9DId4megdJE", color: "#a1a1aa" },
-      { name: "Coche Deportivo", category: "Vehículos", chance: 350, img: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcSyFxZCnVRISSZBd1-tvIDoP6fmWRS3dTMnII6a8axiFcXESd6TJS3oWTCpNC6NpAeoHhhk2e7mQJ1VaRk", color: "#fde047" },
-      { name: "Cohete Espacial", category: "Especial", chance: 100000, img: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcQ5DjoD6JK2vOYyYAuis0EyQ5_vtXtVCEIq6v0B7Oefw0bLKJP-ERpRAsmjXKfttq5d7iHPX7XeyfqC1Y4", color: "#38bdf8" },
-      { name: "Agujero Negro", category: "Mítico", chance: 1000000, img: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcT4pxHlsHJh6rZGLTLoy1IwVeKJvdBY2igvtXSk2-qurkP7DRSmGFVPWcZDHNqIxhOb02Qkn3rxDCAjXiU", color: "#e879f9" }
+      { name: "Lápiz", category: "Escuela", chance: 2, value: 1, img: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQuZpBwkJcGo0RL8_4JuaA8O9fwGVNkaibDq02boNGNyKRmiU6_GLO2poMm1DUp7uHkOmFS9DId4megdJE", color: "#a1a1aa" },
+      { name: "Cuaderno", category: "Escuela", chance: 15, value: 8, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT85tA8O9i1S6W9_lI5QG1A1a1a1a1a1a1a1c", color: "#60a5fa" },
+      { name: "Calculadora", category: "Escuela", chance: 80, value: 45, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT85tA8O9i1S6W9_lI5QG1A1a1a1a1a1a1a1d", color: "#fde047" },
+      { name: "Sartén", category: "Cocina", chance: 20, value: 12, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT85tA8O9i1S6W9_lI5QG1A1a1a1a1a1a1a1g", color: "#60a5fa" },
+      { name: "Microondas", category: "Cocina", chance: 150, value: 90, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT85tA8O9i1S6W9_lI5QG1A1a1a1a1a1a1a1h", color: "#fde047" },
+      { name: "Cama King Size", category: "Muebles", chance: 400, value: 250, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT85tA8O9i1S6W9_lI5QG1A1a1a1a1a1a1a1m", color: "#c084fc" },
+      { name: "Coche Deportivo", category: "Vehículos", chance: 350, value: 200, img: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcSyFxZCnVRISSZBd1-tvIDoP6fmWRS3dTMnII6a8axiFcXESd6TJS3oWTCpNC6NpAeoHhhk2e7mQJ1VaRk", color: "#fde047" },
+      { name: "Avión Pasajeros", category: "Vehículos", chance: 25000, value: 15000, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT85tA8O9i1S6W9_lI5QG1A1a1a1a1a1a1a1t", color: "#f87171" },
+      { name: "Cohete Espacial", category: "Vehículos", chance: 100000, value: 75000, img: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcQ5DjoD6JK2vOYyYAuis0EyQ5_vtXtVCEIq6v0B7Oefw0bLKJP-ERpRAsmjXKfttq5d7iHPX7XeyfqC1Y4", color: "#38bdf8" },
+      { name: "Agujero Negro", category: "Mítico", chance: 1000000, value: 1000000, img: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcT4pxHlsHJh6rZGLTLoy1IwVeKJvdBY2igvtXSk2-qurkP7DRSmGFVPWcZDHNqIxhOb02Qkn3rxDCAjXiU", color: "#e879f9" }
     ];
 
-    let totalRolls = parseInt(localStorage.getItem("omni_rolls_img")) || 0;
-    let unlocked = new Set(JSON.parse(localStorage.getItem("omni_unlocked_img")) || []);
+    // Variables de Estado
+    let coins = parseInt(localStorage.getItem("rng_coins")) || 0;
+    let luck = parseFloat(localStorage.getItem("rng_luck")) || 1.0;
+    let autoSpeed = parseInt(localStorage.getItem("rng_auto_speed")) || 1000; // Tiempo en milisegundos
+    let totalRolls = parseInt(localStorage.getItem("rng_rolls_v4")) || 0;
+    let inventory = JSON.parse(localStorage.getItem("rng_inventory_v4")) || {};
+    let autoRollInterval = null;
 
-    document.getElementById("total-rolls").innerText = totalRolls;
-    document.getElementById("total-count").innerText = ITEMS.length;
+    // Render Inicial
+    updateUI();
 
     const albumEl = document.getElementById("album");
     ITEMS.forEach((item, index) => {
+      const count = inventory[index] || 0;
       const el = document.createElement("div");
-      el.className = `album-item ${unlocked.has(index) ? 'unlocked' : ''}`;
+      el.className = `album-item ${count > 0 ? 'unlocked' : ''}`;
       el.id = `album-${index}`;
-      if (unlocked.has(index)) el.style.borderColor = item.color;
-      el.innerHTML = `<img src="${item.img}"><div><b>${item.name}</b></div><div>1/${item.chance.toLocaleString()}</div>`;
+      if (count > 0) el.style.borderColor = item.color;
+
+      el.innerHTML = `
+        <span class="count-badge" id="badge-${index}">x${count}</span>
+        <img src="${item.img}">
+        <div><b>${item.name}</b></div>
+        <div>1/${item.chance.toLocaleString()}</div>
+        <div style="color: var(--gold-color)">+${item.value} 🪙</div>
+      `;
       albumEl.appendChild(el);
     });
-    document.getElementById("unlocked-count").innerText = unlocked.size;
 
+    updateUnlockedCount();
+
+    function updateUI() {
+      document.getElementById("coins").innerText = coins.toLocaleString();
+      document.getElementById("luck-display").innerText = `${luck.toFixed(1)}x`;
+      document.getElementById("speed-display").innerText = `${(autoSpeed / 1000).toFixed(2)}s`;
+      document.getElementById("total-rolls").innerText = totalRolls;
+      document.getElementById("total-count").innerText = ITEMS.length;
+    }
+
+    function updateUnlockedCount() {
+      const uniqueCount = Object.keys(inventory).filter(k => inventory[k] > 0).length;
+      document.getElementById("unlocked-count").innerText = uniqueCount;
+    }
+
+    // Tirada
     function roll() {
       totalRolls++;
-      document.getElementById("total-rolls").innerText = totalRolls;
-
       const rand = Math.random();
       const sorted = [...ITEMS].sort((a, b) => b.chance - a.chance);
 
       let selected = ITEMS[0];
       for (let item of sorted) {
-        if (rand < (1 / item.chance)) {
+        const effectiveChance = Math.max(1, item.chance / luck);
+        if (rand < (1 / effectiveChance)) {
           selected = item;
           break;
         }
       }
 
-      const cardEl = document.getElementById("main-card");
-      cardEl.classList.remove("shake");
-      void cardEl.offsetWidth;
-      cardEl.classList.add("shake");
+      coins += selected.value;
 
+      // Animación reducida para evitar cuelgues a alta velocidad
+      if (autoSpeed >= 200) {
+        const cardEl = document.getElementById("main-card");
+        cardEl.classList.remove("shake");
+        void cardEl.offsetWidth;
+        cardEl.classList.add("shake");
+      }
+
+      // Actualizar Carta Principal
       document.getElementById("card-category").innerText = selected.category;
       document.getElementById("card-img").src = selected.img;
       document.getElementById("card-title").innerText = selected.name;
       document.getElementById("card-rarity").innerText = `1 en ${selected.chance.toLocaleString()}`;
       document.getElementById("card-rarity").style.color = selected.color;
+      document.getElementById("card-value").innerText = `+${selected.value.toLocaleString()} 🪙`;
       
+      const cardEl = document.getElementById("main-card");
       cardEl.style.borderColor = selected.color;
-      cardEl.style.boxShadow = `0 0 25px ${selected.color}aa`;
+      cardEl.style.boxShadow = `0 0 20px ${selected.color}aa`;
 
+      // Guardar en Inventario
       const index = ITEMS.findIndex(i => i.name === selected.name);
-      if (!unlocked.has(index)) {
-        unlocked.add(index);
-        const albumItem = document.getElementById(`album-${index}`);
-        albumItem.classList.add("unlocked");
-        albumItem.style.borderColor = selected.color;
-        document.getElementById("unlocked-count").innerText = unlocked.size;
+      inventory[index] = (inventory[index] || 0) + 1;
+
+      const albumItem = document.getElementById(`album-${index}`);
+      albumItem.classList.add("unlocked");
+      albumItem.style.borderColor = selected.color;
+
+      document.getElementById(`badge-${index}`).innerText = `x${inventory[index]}`;
+      
+      updateUnlockedCount();
+      updateUI();
+      saveGame();
+    }
+
+    // Comprar Suerte
+    function buyUpgrade(type, amount, cost) {
+      if (coins >= cost) {
+        coins -= cost;
+        luck += amount;
+        updateUI();
+        saveGame();
+      } else {
+        alert("¡Necesitas más monedas!");
+      }
+    }
+
+    // Comprar Velocidad
+    function buySpeedUpgrade(newSpeedMs, cost) {
+      if (autoSpeed <= newSpeedMs) {
+        alert("¡Ya tienes esta velocidad o una superior!");
+        return;
       }
 
-      localStorage.setItem("omni_rolls_img", totalRolls);
-      localStorage.setItem("omni_unlocked_img", JSON.stringify(Array.from(unlocked)));
+      if (coins >= cost) {
+        coins -= cost;
+        autoSpeed = newSpeedMs;
+        
+        // Reiniciar intervalo si el Auto-Roll está activo para aplicar el cambio inmediatamente
+        if (autoRollInterval) {
+          clearInterval(autoRollInterval);
+          autoRollInterval = setInterval(roll, autoSpeed);
+        }
+
+        updateUI();
+        saveGame();
+        alert("¡Velocidad actualizada!");
+      } else {
+        alert("¡Necesitas más monedas!");
+      }
+    }
+
+    // Alternar Auto Roll
+    function toggleAutoRoll() {
+      const btn = document.getElementById("btn-auto");
+      if (autoRollInterval) {
+        clearInterval(autoRollInterval);
+        autoRollInterval = null;
+        btn.innerText = "🔄 Tirar Auto: OFF";
+        btn.classList.remove("active");
+      } else {
+        autoRollInterval = setInterval(roll, autoSpeed);
+        btn.innerText = "🔄 Tirar Auto: ON";
+        btn.classList.add("active");
+      }
+    }
+
+    function saveGame() {
+      localStorage.setItem("rng_coins", coins);
+      localStorage.setItem("rng_luck", luck);
+      localStorage.setItem("rng_auto_speed", autoSpeed);
+      localStorage.setItem("rng_rolls_v4", totalRolls);
+      localStorage.setItem("rng_inventory_v4", JSON.stringify(inventory));
     }
   </script>
 </body>
